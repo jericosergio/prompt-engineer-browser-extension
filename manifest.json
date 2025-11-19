@@ -1,11 +1,22 @@
 {
     "manifest_version": 3,
-    "name": "Prompt Engineer Helper",
+    "name": "Prompt Engineer Helper by jrcsrg",
     "description": "Generate high-quality LLM prompts from task descriptions using popular LLM APIs (Gemini, Claude, ChatGPT).",
-    "version": "1.6",
+    "version": "1.7",
+    "icons": {
+        "16": "assets/icons/icon_16x16.png",
+        "32": "assets/icons/icon_32x32.png",
+        "48": "assets/icons/icon_48x48.png",
+        "128": "assets/icons/icon_128x128.png"
+    },
     "action": {
         "default_popup": "popup.html",
-        "default_title": "Prompt Engineer Helper"
+        "default_title": "Prompt Engineer Helper",
+        "default_icon": {
+            "16": "assets/icons/icon_16x16.png",
+            "24": "assets/icons/icon_32x32.png",
+            "32": "assets/icons/icon_32x32.png"
+        }
     },
     "permissions": [
         "storage",
