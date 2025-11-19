@@ -34,22 +34,34 @@
         body {
             font-family: var(--font-stack);
             margin: 0;
-            width: 380px;
+            min-width: 420px;
+            min-height: 600px;
             background: var(--bg);
             color: var(--text);
             -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
         }
+        * { box-sizing: border-box; }
         .container {
             padding: 14px 14px 18px;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
         }
         header {
             background: linear-gradient(135deg,var(--accent) 0%, var(--accent-hover) 100%);
             padding: 12px 14px 10px;
             border-bottom: 1px solid var(--border);
             box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         header h1 {
             margin: 0;
@@ -57,6 +69,33 @@
             font-weight: 600;
             letter-spacing: .5px;
             color: #fff;
+        }
+        .zoom-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .zoom-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        .zoom-btn:hover { background: rgba(255,255,255,0.3); }
+        .zoom-level {
+            color: #fff;
+            font-size: 11px;
+            min-width: 40px;
+            text-align: center;
         }
         .row {
             display: flex;
@@ -74,22 +113,27 @@
         }
         select, input, textarea {
             width: 100%;
+            max-width: 100%;
             background: var(--bg-panel);
             border: 1px solid var(--border);
             color: var(--text);
             border-radius: var(--radius-sm);
             font-family: inherit;
             font-size: 13px;
-            padding: 8px 9px;
+            padding: 8px 12px 8px 9px;
             outline: none;
             transition: border-color .15s, background .15s;
+            box-sizing: border-box;
+        }
+        textarea {
+            padding-right: 14px;
         }
         select:focus, input:focus, textarea:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 1px var(--accent) inset;
         }
-        textarea { resize: vertical; min-height: 70px; }
-        #output { min-height: 140px; }
+        textarea { resize: vertical; min-height: 56px; max-height: 56px; }
+        #output { min-height: 100px; max-height: none; resize: vertical; }
         button.action {
             background: var(--accent);
             color: #fff;
@@ -137,18 +181,33 @@
             border: 1px solid var(--border);
             color: var(--text-dim);
         }
-        .theme-toggle { cursor: pointer; font-size: 11px; color: var(--accent); text-decoration: underline; background: none; border: none; padding: 0; }
+        .theme-toggle { cursor: pointer; font-size: 18px; background: none; border: none; padding: 4px 8px; opacity: 0.8; transition: opacity .15s, transform .15s; }
+        .theme-toggle:hover { opacity: 1; transform: scale(1.1); }
+        .key-section { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; background: var(--bg-panel); }
+        .key-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+        .key-header:hover { opacity: 0.8; }
+        .key-body { margin-top: 8px; display: none; }
+        .key-body.open { display: block; }
+        .key-controls { display: flex; gap: 6px; margin-top: 6px; }
+        .key-controls button { flex: 1; }
+        .icon-btn { background: var(--bg-alt); border: 1px solid var(--border); color: var(--text-dim); padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 11px; font-weight: 500; transition: background .15s, color .15s; }
+        .icon-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
     </style>
 </head>
 
 <body>
     <header>
         <h1>Prompt Engineer Helper</h1>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomOut" title="Zoom out">−</button>
+            <span class="zoom-level" id="zoomLevel">100%</span>
+            <button class="zoom-btn" id="zoomIn" title="Zoom in">+</button>
+        </div>
     </header>
     <div class="container">
         <div class="row" style="align-items:center; justify-content:space-between;">
             <label for="provider">Provider <span class="pill" id="providerPill">...</span></label>
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">Toggle Theme</button>
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme"></button>
         </div>
         <select id="provider">
             <option value="gemini">Gemini</option>
@@ -156,12 +215,25 @@
             <option value="anthropic">Anthropic (Claude)</option>
         </select>
 
-        <label id="apiKeyLabel" for="apiKey">API Key</label>
-        <input id="apiKey" type="password" placeholder="Paste your API key">
-        <small>Saved locally. Never embed your key in published builds.</small>
-
         <label for="model">Model</label>
-        <input id="model" type="text" placeholder="e.g. gemini-2.5-flash-lite, gpt-4o-mini, claude-3-5-haiku-latest">
+        <select id="model">
+            <option value="">Loading...</option>
+        </select>
+
+        <div class="key-section">
+            <div class="key-header" id="keyHeader">
+                <label id="apiKeyLabel" style="margin:0;">API Key</label>
+                <small style="color:var(--accent); font-size:10px;" id="keyToggleText">▼ Show</small>
+            </div>
+            <div class="key-body" id="keyBody">
+                <input id="apiKey" type="password" placeholder="Paste your API key" style="margin-top:6px;">
+                <div class="key-controls">
+                    <button id="toggleKeyVisibility" class="icon-btn">👁 Show</button>
+                    <button id="copyKey" class="icon-btn">📋 Copy</button>
+                </div>
+                <small style="display:block; margin-top:6px;">Saved locally. Never embed keys in published builds.</small>
+            </div>
+        </div>
 
         <label for="title">Title <span class="req">*</span></label>
         <input id="title" type="text" placeholder="e.g. Marketing Slogan for a New Cafe">

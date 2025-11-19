@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const providerSelect = document.getElementById("provider");
     const apiKeyLabel = document.getElementById("apiKeyLabel");
     const apiKeyInput = document.getElementById("apiKey");
-    const modelInput = document.getElementById("model");
+    const modelSelect = document.getElementById("model");
     const titleInput = document.getElementById("title");
     const scenarioInput = document.getElementById("scenario");
     const goalInput = document.getElementById("goal");
@@ -14,6 +14,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const clearBtn = document.getElementById("clearBtn");
     const themeToggle = document.getElementById("themeToggle");
     const providerPill = document.getElementById("providerPill");
+    const keyHeader = document.getElementById("keyHeader");
+    const keyBody = document.getElementById("keyBody");
+    const keyToggleText = document.getElementById("keyToggleText");
+    const toggleKeyVisibility = document.getElementById("toggleKeyVisibility");
+    const copyKeyBtn = document.getElementById("copyKey");
+    const zoomInBtn = document.getElementById("zoomIn");
+    const zoomOutBtn = document.getElementById("zoomOut");
+    const zoomLevelEl = document.getElementById("zoomLevel");
+    const container = document.querySelector(".container");
+
+    let currentZoom = 1.0;
+    const baseWidth = 420;
+    const baseHeight = 600;
+
+    const modelOptions = {
+        gemini: [
+            "gemini-2.0-flash-exp",
+            "gemini-2.5-flash-lite",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
+            "gemini-1.5-pro"
+        ],
+        openai: [
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4-turbo",
+            "gpt-3.5-turbo"
+        ],
+        anthropic: [
+            "claude-3-5-sonnet-latest",
+            "claude-3-5-haiku-latest",
+            "claude-3-opus-latest",
+            "claude-3-haiku-20240307"
+        ]
+    };
 
     const defaults = {
         provider: "gemini",
@@ -36,29 +71,46 @@ document.addEventListener("DOMContentLoaded", () => {
         else apiKeyLabel.textContent = "API Key";
     }
 
+    function populateModels(provider) {
+        const models = modelOptions[provider] || [];
+        modelSelect.innerHTML = "";
+        models.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m;
+            opt.textContent = m;
+            modelSelect.appendChild(opt);
+        });
+    }
+
     function setPlaceholders(provider) {
         if (provider === "gemini") {
             apiKeyInput.placeholder = "Paste your Gemini API key";
-            modelInput.placeholder = "e.g. gemini-2.5-flash-lite";
         } else if (provider === "openai") {
             apiKeyInput.placeholder = "Paste your OpenAI API key";
-            modelInput.placeholder = "e.g. gpt-4o-mini";
         } else if (provider === "anthropic") {
             apiKeyInput.placeholder = "Paste your Anthropic API key";
-            modelInput.placeholder = "e.g. claude-3-5-haiku-latest";
         } else {
             apiKeyInput.placeholder = "Paste your API key";
-            modelInput.placeholder = "Model name";
         }
     }
 
     function loadForProvider(provider, store) {
         setApiKeyLabel(provider);
+        populateModels(provider);
         setPlaceholders(provider);
         const keyKey = providerKeyKey(provider);
         const modelKey = providerModelKey(provider);
         apiKeyInput.value = store[keyKey] || "";
-        modelInput.value = store[modelKey] || defaults[modelKey] || "";
+        const savedModel = store[modelKey] || defaults[modelKey] || "";
+        modelSelect.value = savedModel;
+        // If saved model not in dropdown, add it as custom option
+        if (savedModel && !Array.from(modelSelect.options).find(o => o.value === savedModel)) {
+            const opt = document.createElement("option");
+            opt.value = savedModel;
+            opt.textContent = savedModel + " (custom)";
+            modelSelect.appendChild(opt);
+            modelSelect.value = savedModel;
+        }
     }
 
     chrome.storage.sync.get(null, (store) => {
@@ -72,6 +124,12 @@ document.addEventListener("DOMContentLoaded", () => {
         outputTextarea.value = store.draft_output || "";
         applyTheme(store.theme || "dark");
         updateProviderPill(provider);
+        // Key section collapsed by default
+        keyBody.classList.remove("open");
+        keyToggleText.textContent = "▼ Show";
+        // Restore zoom
+        currentZoom = store.zoom || 1.0;
+        applyZoom(currentZoom);
     });
 
     providerSelect.addEventListener("change", () => {
@@ -89,18 +147,18 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.sync.set(toSet);
     });
 
-    modelInput.addEventListener("change", () => {
+    modelSelect.addEventListener("change", () => {
         const provider = providerSelect.value;
         const modelKey = providerModelKey(provider);
         const toSet = {};
-        toSet[modelKey] = modelInput.value || "";
+        toSet[modelKey] = modelSelect.value || "";
         chrome.storage.sync.set(toSet);
     });
 
     generateBtn.addEventListener("click", async () => {
         const provider = providerSelect.value;
         const apiKey = apiKeyInput.value.trim();
-        const model = modelInput.value.trim() || defaults[providerModelKey(provider)] || "";
+        const model = modelSelect.value.trim() || defaults[providerModelKey(provider)] || "";
         const title = titleInput.value.trim();
         const scenario = scenarioInput.value.trim();
         const goal = goalInput.value.trim();
@@ -157,6 +215,47 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.sync.set({ theme: next });
     });
 
+    keyHeader.addEventListener("click", () => {
+        keyBody.classList.toggle("open");
+        keyToggleText.textContent = keyBody.classList.contains("open") ? "▲ Hide" : "▼ Show";
+    });
+
+    toggleKeyVisibility.addEventListener("click", () => {
+        if (apiKeyInput.type === "password") {
+            apiKeyInput.type = "text";
+            toggleKeyVisibility.textContent = "🙈 Hide";
+        } else {
+            apiKeyInput.type = "password";
+            toggleKeyVisibility.textContent = "👁 Show";
+        }
+    });
+
+    copyKeyBtn.addEventListener("click", () => {
+        const key = apiKeyInput.value;
+        if (!key) {
+            statusEl.textContent = "No key to copy.";
+            return;
+        }
+        navigator.clipboard.writeText(key).then(() => {
+            statusEl.textContent = "API key copied to clipboard.";
+        }).catch(err => {
+            console.error(err);
+            statusEl.textContent = "Copy failed.";
+        });
+    });
+
+    zoomInBtn.addEventListener("click", () => {
+        currentZoom = Math.min(currentZoom + 0.1, 1.5);
+        applyZoom(currentZoom);
+        chrome.storage.sync.set({ zoom: currentZoom });
+    });
+
+    zoomOutBtn.addEventListener("click", () => {
+        currentZoom = Math.max(currentZoom - 0.1, 0.7);
+        applyZoom(currentZoom);
+        chrome.storage.sync.set({ zoom: currentZoom });
+    });
+
     function updateProviderPill(provider) {
         providerPill.textContent = provider;
     }
@@ -164,9 +263,25 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyTheme(mode) {
         if (mode === "light") {
             document.body.classList.add("light");
+            themeToggle.textContent = "☀️";
+            themeToggle.title = "Switch to dark mode";
         } else {
             document.body.classList.remove("light");
+            themeToggle.textContent = "🌙";
+            themeToggle.title = "Switch to light mode";
         }
+    }
+
+    function applyZoom(zoom) {
+        document.body.style.zoom = zoom;
+        // Adjust body dimensions to accommodate zoom
+        const adjustedWidth = Math.round(baseWidth / zoom);
+        const adjustedHeight = Math.round(baseHeight / zoom);
+        document.body.style.width = `${adjustedWidth}px`;
+        document.body.style.height = `${adjustedHeight}px`;
+        document.body.style.minWidth = `${adjustedWidth}px`;
+        document.body.style.minHeight = `${adjustedHeight}px`;
+        zoomLevelEl.textContent = `${Math.round(zoom * 100)}%`;
     }
 
     // Draft autosave (debounced)

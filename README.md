@@ -1,110 +1,456 @@
-# Prompt Engineer Helper (Browser Extension)
+# Prompt Engineer Helper
 
-Generate high-quality, structured prompts for any Large Language Model (LLM) based on a task description. This extension helps you craft precise meta-prompts without solving the task itself. It supports multiple providers (Gemini, OpenAI, Anthropic) and lets you switch models on the fly while preserving your draft.
+> A browser extension for generating high-quality, structured prompts across multiple LLM providers (Gemini, OpenAI, Anthropic).
 
-## Features
-- Multi-provider LLM support: Gemini, OpenAI (ChatGPT), Anthropic (Claude)
-- Custom model input (e.g. `gemini-2.5-flash-lite`, `gpt-4o-mini`, `claude-3-5-haiku-latest`)
-- Automatic draft persistence (Title, Scenario, Goal, Generated Prompt)
-- Dark/Light theme toggle (persisted)
-- Per-provider API key & model storage (keys kept local via `chrome.storage.sync`)
-- Clean, modern UI with status feedback and clear/reset button
-- Single meta-prompt generation that instructs another AI rather than solving the task
+![Extension Showcase](./assets/image/extension_showcase.png)
 
-## How It Works
-You provide:
-1. Title – High-level task name
-2. Scenario – Context or background
-3. Goal / Requirements – What the AI must produce, constraints, style, format
+## 📋 Table of Contents
+- [Features](#features)
+- [How It Works](#how-it-works)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Supported Providers](#supported-providers)
+- [UI Overview](#ui-overview)
+- [Technical Details](#technical-details)
+- [Use Cases](#use-cases)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
-The extension sends a meta-instruction to the selected LLM telling it to act as a prompt engineer. The returned text is a reusable prompt you can paste elsewhere.
+---
 
-## Supported Providers
-| Provider   | Endpoint | Example Model | Notes |
-|-----------|----------|---------------|-------|
-| Gemini    | `generateContent` | `gemini-2.5-flash-lite` | Uses Google Generative Language API |
-| OpenAI    | `chat/completions` | `gpt-4o-mini` | Standard Chat Completions format |
-| Anthropic | `messages` | `claude-3-5-haiku-latest` | Requires `anthropic-version` header |
+## ✨ Features
 
-You can add more later (e.g. Mistral, Cohere) by extending the `callLLM` dispatch and adding a provider option.
+- 🔌 **Multi-provider support** - Gemini, OpenAI (ChatGPT), Anthropic (Claude)
+- 📋 **Model selector** - Pre-populated dropdowns with popular models per provider
+- 🔐 **Collapsible API key section** - Hidden by default with show/hide and copy features
+- 💾 **Auto-save drafts** - Title, Scenario, Goal, and output persist automatically
+- 🌙 **Theme toggle** - Dark/Light modes with persisted preference
+- 🔍 **Zoom controls** - UI scaling from 70% to 150%
+- 📦 **Provider-specific storage** - Separate API keys and model preferences
+- 🎨 **Modern UI** - Gradient header, responsive layout, clean design
+- 🗑️ **Clear button** - Quick reset for all draft fields
+- 🎯 **Meta-prompt generation** - Creates prompts for other AIs without solving tasks directly
 
-## Installation (Chrome)
-1. Clone or download this repository.
-2. Open Chrome: `chrome://extensions/`
-3. Enable Developer Mode (toggle in top-right).
-4. Click "Load unpacked" and select the folder `prompt-engineer-extension`.
-5. The extension icon will appear; open the popup to start.
+---
 
-## Usage
-1. Select a provider (Gemini / OpenAI / Anthropic).
-2. Paste your API key (stored locally – never hard-code keys into code before publishing).
-3. Optionally adjust the model name.
-4. Fill Title, Scenario, and Goal / Requirements.
-5. Click "Generate Prompt".
-6. Copy the generated prompt and paste it into any AI chat.
-7. Use "Clear" to reset the draft if needed.
+## 🔄 How It Works
 
-## Draft Persistence
-All editable fields (except provider-specific key/model which have their own entries) are saved automatically after a short debounce:
-- `draft_title`
-- `draft_scenario`
-- `draft_goal`
-- `draft_output`
+1. **Provide** three key inputs:
+   - **Title** - High-level task name
+   - **Scenario** - Context or background
+   - **Goal/Requirements** - What the AI must produce, constraints, style
 
-This prevents losing progress when the popup closes or re-opens.
+2. **Generate** - Extension sends a meta-instruction to your selected LLM
 
-## Storage Keys
+3. **Reuse** - Copy the generated prompt and paste it into any AI chat interface
+
+The extension acts as a **prompt engineer**, creating instructions for another AI rather than solving the task itself.
+
+---
+
+## 📥 Installation
+
+### Chrome (and Chromium-based browsers)
+
+1. Clone or download this repository
+   ```bash
+   git clone https://github.com/jericosergio/prompt-engineer-browser-extension.git
+   ```
+
+2. Open Chrome and navigate to `chrome://extensions/`
+
+3. Enable **Developer Mode** (toggle in top-right)
+
+4. Click **Load unpacked** and select the `prompt-engineer-extension` folder
+
+5. The extension icon will appear - click it to open the popup
+
+---
+
+## 🚀 Usage
+
+### Quick Start
+
+1. **Select Provider** - Choose Gemini, OpenAI, or Anthropic
+2. **Choose Model** - Pick from pre-populated model options
+3. **Configure API Key** (first time only):
+   - Click "▼ Show" to expand the API Key section
+   - Paste your API key (stored locally)
+   - Use "👁 Show" to toggle visibility or "📋 Copy" to copy
+4. **Fill Prompt Details**:
+   - **Title**: e.g., "Marketing Slogan for Coffee Shop"
+   - **Scenario**: Provide context and background
+   - **Goal/Requirements**: Specify output format, constraints, style
+5. **Generate** - Click button and wait for response
+6. **Copy & Use** - Copy output and paste into any AI chat
+7. **Clear** - Reset all fields when starting fresh
+8. **Adjust UI** - Use +/− zoom controls (70%-150%)
+9. **Toggle Theme** - Click 🌙/☀️ icon
+
+---
+
+## 🤖 Supported Providers
+
+| Provider | Endpoint | Models Available |
+|----------|----------|------------------|
+| **Gemini** | `generateContent` | `gemini-2.0-flash-exp`, `gemini-2.5-flash-lite`, `gemini-1.5-flash`, `gemini-1.5-pro` |
+| **OpenAI** | `chat/completions` | `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-3.5-turbo` |
+| **Anthropic** | `messages` | `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`, `claude-3-opus-latest` |
+
+**Extending Support**: Add more providers (Mistral, Cohere, etc.) by:
+1. Adding `<option>` in `popup.html`
+2. Extending `callLLM` in `popup.js` with new handler
+3. Adding host permission in `manifest.json`
+
+---
+
+## 🖥️ UI Overview
+
+### Header
+```
+┌─────────────────────────────────────────────────┐
+│ Prompt Engineer Helper        [−] 100% [+] 🌙  │
+└─────────────────────────────────────────────────┘
+```
+- Title, zoom controls (+/−), theme toggle
+
+### Provider & Model Selection
+```
+Provider [gemini]                    Model
+┌──────────────────────────┐    ┌──────────────────────┐
+│ Gemini              ▼    │    │ gemini-2.5-...   ▼  │
+└──────────────────────────┘    └──────────────────────┘
+```
+
+### API Key Section (Collapsible)
+```
+┌─────────────────────────────────────────────────┐
+│ GEMINI API KEY                      ▼ Show      │ ← Click to expand
+└─────────────────────────────────────────────────┘
+```
+Expanded:
+```
+┌─────────────────────────────────────────────────┐
+│ GEMINI API KEY                      ▲ Hide      │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ ●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●● │ │
+│ └─────────────────────────────────────────────┘ │
+│ [👁 Show]  [📋 Copy]                            │
+└─────────────────────────────────────────────────┘
+```
+
+### Input Fields
+```
+TITLE *
+┌─────────────────────────────────────────────────┐
+│ Email Subject Lines for Newsletter              │
+└─────────────────────────────────────────────────┘
+
+SCENARIO *
+┌─────────────────────────────────────────────────┐
+│ Monthly tech newsletter with 10k subscribers... │
+└─────────────────────────────────────────────────┘
+
+GOAL / REQUIREMENTS *
+┌─────────────────────────────────────────────────┐
+│ Generate 5 catchy subject lines under 60 chars  │
+└─────────────────────────────────────────────────┘
+```
+
+### Action Buttons & Output
+```
+┌──────────────────────────────────┬──────────────┐
+│      Generate Prompt             │   Clear      │
+└──────────────────────────────────┴──────────────┘
+
+GENERATED PROMPT
+┌─────────────────────────────────────────────────┐
+│ You are an expert copywriter specializing in... │
+└─────────────────────────────────────────────────┘
+Status: Done. You can copy the prompt above.
+```
+
+---
+
+## 🛠️ Technical Details
+
+### Architecture
+- **Manifest V3** - Latest Chrome extension standards
+- **No dependencies** - Pure HTML/CSS/JS
+- **Direct API calls** - Fetch requests to provider endpoints
+- **Chrome Storage API** - `storage.sync` for cross-device persistence
+
+### File Structure
+```
+prompt-engineer-extension/
+├── manifest.json          # Extension manifest (MV3)
+├── popup.html             # UI with embedded CSS
+├── popup.js               # Main logic and API handlers
+├── LICENSE                # MIT License
+└── README.md              # This file
+```
+
+### Storage Keys
 | Key | Purpose |
 |-----|---------|
-| `llmProvider` | Current selected provider |
-| `apiKey_gemini` / `apiKey_openai` / `apiKey_anthropic` | Provider-specific API keys |
-| `model_gemini` / `model_openai` / `model_anthropic` | Last used model names |
-| `draft_title`, `draft_scenario`, `draft_goal`, `draft_output` | Current work-in-progress fields |
+| `llmProvider` | Current provider (gemini, openai, anthropic) |
+| `apiKey_[provider]` | Provider-specific API keys |
+| `model_[provider]` | Last selected model per provider |
+| `draft_title`, `draft_scenario`, `draft_goal`, `draft_output` | Auto-saved fields |
 | `theme` | UI theme (`dark` or `light`) |
+| `zoom` | UI zoom level (0.7 to 1.5) |
 
-## Security & Privacy
-- API keys are stored via `chrome.storage.sync`. They are not transmitted anywhere except directly to the provider's API endpoint you invoke.
-- Do not publish the extension with embedded API keys.
-- Consider adding an optional "Lock Field" or encryption layer if you need increased local protection (not implemented by default).
+### Key Features Implementation
 
-## Extending Provider Support
-1. Add an `<option>` in `popup.html` inside the provider `<select>`.
-2. Update `popup.js`:
-   - Add default model key in `defaults` if desired.
-   - Extend `callLLM` dispatch with a new handler function (e.g. `callMistral`).
-   - Match provider-specific request/response schema.
-3. Add host permission in `manifest.json` under `host_permissions`.
-4. (Optional) Add custom headers or parsing logic for the new provider.
+**Auto-save**: 400ms debounced saves on input/blur events
 
-## Development
-- Files:
-  - `manifest.json` – Chrome extension manifest (MV3)
-  - `popup.html` – UI markup + embedded styling
-  - `popup.js` – Logic for provider routing, autosave, theming, API calls
-- No build step required (pure HTML/JS).
-- Reload in `chrome://extensions` after changes (click the refresh icon on the extension card).
+**Zoom**: CSS `zoom` property with dynamic dimension adjustment
+```javascript
+function applyZoom(zoom) {
+    document.body.style.zoom = zoom;
+    const adjustedWidth = Math.round(baseWidth / zoom);
+    const adjustedHeight = Math.round(baseHeight / zoom);
+    document.body.style.width = `${adjustedWidth}px`;
+    document.body.style.height = `${adjustedHeight}px`;
+}
+```
 
-## Potential Enhancements
-- Response streaming (for providers supporting it) with incremental display.
-- Prompt template library (dropdown of reusable patterns).
-- Toast notifications for errors/success.
-- Export/share prompt history panel.
-- Add optional max tokens / temperature controls per provider.
+**Theme**: CSS variables swap for dark/light modes
+```css
+:root { --bg: #111827; --text: #f1f5f9; --accent: #6366f1; }
+.light { --bg: #ffffff; --text: #0f172a; }
+```
 
-## Contributing
-1. Fork the repo.
-2. Create a feature branch: `git checkout -b feature/xyz`.
-3. Commit changes: `git commit -m "Add xyz"`.
-4. Push: `git push origin feature/xyz`.
-5. Open a Pull Request describing the change.
+---
 
-Please keep UI consistent and avoid storing sensitive information beyond API keys.
+## 💡 Use Cases
 
-## License
-This project is licensed under the MIT License – see `LICENSE` file for details.
+<details>
+<summary><strong>1. Product Description Generator</strong></summary>
 
-## Disclaimer
-Use at your own risk. API usage may incur costs depending on the provider. Ensure you monitor usage and follow each provider's terms of service.
+**Input:**
+- Title: "Product Description Writer"
+- Scenario: "E-commerce site selling eco-friendly products"
+- Goal: "Write SEO-friendly descriptions, 150-200 words, include benefits"
 
-## Acknowledgments
-Thanks to the open ecosystems of Gemini, OpenAI, and Anthropic for enabling flexible prompt engineering workflows.
+**Output:**
+```
+You are an expert e-commerce copywriter specializing in eco-friendly products.
+
+Your task is to write product descriptions with the following requirements:
+- Length: 150-200 words
+- SEO-optimized with relevant keywords
+- Highlight environmental benefits
+- Include customer pain points and solutions
+- Use persuasive but authentic tone
+- End with a clear call-to-action
+
+Format: Plain text, paragraph style
+Constraints: Avoid greenwashing, use specific facts
+```
+</details>
+
+<details>
+<summary><strong>2. API Documentation Generator</strong></summary>
+
+**Input:**
+- Title: "API Documentation Generator"
+- Scenario: "RESTful API with 20+ endpoints for SaaS platform"
+- Goal: "Document each endpoint with examples, params, responses"
+
+**Output:**
+```
+You are a technical writer creating API documentation.
+
+For each endpoint provided, generate comprehensive documentation including:
+1. Endpoint path and HTTP method
+2. Brief description (1-2 sentences)
+3. Request parameters (query, path, body) with types and descriptions
+4. Response schema with example JSON
+5. Possible error codes and meanings
+6. Usage example in cURL and JavaScript
+
+Style: Clear, concise, developer-friendly
+Format: Markdown with code blocks
+```
+</details>
+
+<details>
+<summary><strong>3. Social Media Content Calendar</strong></summary>
+
+**Input:**
+- Title: "LinkedIn Post Scheduler"
+- Scenario: "B2B SaaS company targeting CTOs and VPs"
+- Goal: "Generate 10 post ideas with drafts, one per week"
+
+**Output:**
+```
+You are a B2B social media strategist focused on LinkedIn.
+
+Create a 10-week content calendar with:
+- Post theme/topic (relevant to CTOs/VPs)
+- Draft post text (120-150 words)
+- 3-5 relevant hashtags
+- Suggested posting day/time
+- Call-to-action (comment, share, visit link)
+
+Themes to cover: Industry trends, Leadership insights,
+Product updates, Case studies, Thought leadership
+
+Tone: Professional yet approachable
+Constraints: No sales pitch in every post
+```
+</details>
+
+---
+
+## 👥 Who Benefits
+
+| Audience | Benefits |
+|----------|----------|
+| **Developers** | API testing, prompt iteration, reusable templates |
+| **Content Creators** | Consistent structure, quality control, time savings |
+| **Researchers** | Experimentation, reproducible templates, collaboration |
+| **Educators** | Teaching tool, student projects, consistent grading |
+
+---
+
+## 🔧 Development
+
+### Setup
+No build step required - pure HTML/JS/CSS.
+
+### Testing
+1. Make changes to files
+2. Go to `chrome://extensions/`
+3. Click refresh icon on extension card
+4. Open popup to test changes
+
+### Adding Models
+Edit `modelOptions` object in `popup.js`:
+```javascript
+const modelOptions = {
+    gemini: ["model-1", "model-2"],
+    openai: ["model-1", "model-2"],
+    anthropic: ["model-1", "model-2"]
+};
+```
+
+### UI Customization
+All styles in `popup.html` `<style>` block. CSS variables control theming:
+- `--bg`, `--text`, `--accent`, `--border` for colors
+- `.light` class overrides for light mode
+
+---
+
+## 🌟 Features in Detail
+
+### Security & Privacy
+- 🔒 Keys stored locally via `chrome.storage.sync`
+- 🚫 No third-party transmission
+- ⚠️ Never publish with embedded keys
+- 🔐 Collapsible section hides keys by default
+
+### Accessibility
+- ⌨️ Full keyboard navigation
+- 🔍 Zoom support (70%-150%)
+- 🌓 High contrast light mode
+- 📢 Screen reader friendly with semantic HTML
+
+### Performance
+- ⚡ Fast load (~15KB total)
+- 💨 Instant UI (local-first)
+- 💾 Efficient debounced saves
+- 🎯 Direct API calls (no backend)
+
+---
+
+## 🌐 Browser Compatibility
+
+| Browser | Status | Notes |
+|---------|--------|-------|
+| ✅ Chrome | Tested & Supported | Fully compatible |
+| ✅ Edge | Supported | Chromium-based |
+| ✅ Brave | Supported | Chromium-based |
+| ✅ Opera | Supported | Chromium-based |
+| ⚠️ Firefox | Requires MV3 adjustments | Manifest conversion needed |
+| ⚠️ Safari | Requires conversion | Safari extension format needed |
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Firefox and Safari versions
+- [ ] Prompt history panel with export
+- [ ] Template library with categories
+- [ ] Streaming API support
+- [ ] Advanced parameter controls (temperature, max tokens)
+- [ ] Import/export settings
+- [ ] Keyboard shortcuts
+- [ ] Multi-language UI (i18n)
+- [ ] Chrome Web Store publication
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how:
+
+1. **Fork** the repository
+2. **Create** a feature branch
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Commit** your changes
+   ```bash
+   git commit -m "Add amazing feature"
+   ```
+4. **Push** to your branch
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+5. **Open** a Pull Request
+
+### Guidelines
+- Keep UI consistent with existing design
+- Avoid storing sensitive information beyond API keys
+- Test thoroughly before submitting PR
+- Update documentation for new features
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## ⚠️ Disclaimer
+
+**Use at your own risk.** API usage may incur costs depending on the provider. Monitor usage and follow each provider's terms of service.
+
+---
+
+## 🙏 Acknowledgments
+
+Thanks to the open ecosystems of **Gemini**, **OpenAI**, and **Anthropic** for enabling flexible prompt engineering workflows.
+
+---
+
+## 📞 Community & Support
+
+- **Repository**: [github.com/jericosergio/prompt-engineer-browser-extension](https://github.com/jericosergio/prompt-engineer-browser-extension)
+- **Issues**: [Report bugs or request features](https://github.com/jericosergio/prompt-engineer-browser-extension/issues)
+- **Discussions**: Share your use cases and prompts
+- **Star** the repo if you find it useful!
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the prompt engineering community**
+
+[⬆ Back to Top](#prompt-engineer-helper)
+
+</div>
