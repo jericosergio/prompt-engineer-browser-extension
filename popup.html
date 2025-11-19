@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prompt Engineer Helper</title>
+    <style>
+        :root {
+            --bg: #111827;
+            --bg-alt: #1f2937;
+            --bg-panel: #0f172a;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --border: #334155;
+            --radius-sm: 4px;
+            --radius: 8px;
+            --shadow: 0 4px 12px -2px rgba(0,0,0,0.5);
+            --font-stack: 'Segoe UI', system-ui, Arial, sans-serif;
+            --danger: #ef4444;
+        }
+        .light {
+            --bg: #ffffff;
+            --bg-alt: #f1f5f9;
+            --bg-panel: #ffffff;
+            --text: #0f172a;
+            --text-dim: #475569;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --border: #e2e8f0;
+            --shadow: 0 4px 12px -2px rgba(0,0,0,0.15);
+        }
+        body {
+            font-family: var(--font-stack);
+            margin: 0;
+            width: 380px;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            padding: 14px 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        header {
+            background: linear-gradient(135deg,var(--accent) 0%, var(--accent-hover) 100%);
+            padding: 12px 14px 10px;
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: .5px;
+            color: #fff;
+        }
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+        label span.req { color: var(--accent); }
+        label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        select, input, textarea {
+            width: 100%;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            padding: 8px 9px;
+            outline: none;
+            transition: border-color .15s, background .15s;
+        }
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent) inset;
+        }
+        textarea { resize: vertical; min-height: 70px; }
+        #output { min-height: 140px; }
+        button.action {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            cursor: pointer;
+            letter-spacing: .5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px -2px rgba(0,0,0,.4);
+            transition: background .15s, transform .15s;
+            width: 100%;
+        }
+        button.action:hover { background: var(--accent-hover); }
+        button.action:active { transform: translateY(1px); }
+        .inline-buttons { display: flex; gap: 8px; }
+        button.secondary {
+            background: var(--bg-panel);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background .15s, color .15s, border-color .15s;
+            flex: 1;
+        }
+        button.secondary:hover { background: var(--bg-alt); color: var(--text); }
+        button.danger { border-color: var(--danger); color: var(--danger); }
+        button.danger:hover { background: var(--danger); color: #fff; }
+        small { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+        footer { margin-top: 4px; }
+        .status { min-height: 16px; font-size: 11px; color: var(--text-dim); }
+        .pill {
+            background: var(--bg-alt);
+            padding: 2px 6px 3px;
+            font-size: 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+        }
+        .theme-toggle { cursor: pointer; font-size: 11px; color: var(--accent); text-decoration: underline; background: none; border: none; padding: 0; }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Prompt Engineer Helper</h1>
+    </header>
+    <div class="container">
+        <div class="row" style="align-items:center; justify-content:space-between;">
+            <label for="provider">Provider <span class="pill" id="providerPill">...</span></label>
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">Toggle Theme</button>
+        </div>
+        <select id="provider">
+            <option value="gemini">Gemini</option>
+            <option value="openai">OpenAI (ChatGPT)</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+        </select>
+
+        <label id="apiKeyLabel" for="apiKey">API Key</label>
+        <input id="apiKey" type="password" placeholder="Paste your API key">
+        <small>Saved locally. Never embed your key in published builds.</small>
+
+        <label for="model">Model</label>
+        <input id="model" type="text" placeholder="e.g. gemini-2.5-flash-lite, gpt-4o-mini, claude-3-5-haiku-latest">
+
+        <label for="title">Title <span class="req">*</span></label>
+        <input id="title" type="text" placeholder="e.g. Marketing Slogan for a New Cafe">
+
+        <label for="scenario">Scenario <span class="req">*</span></label>
+        <textarea id="scenario" placeholder="Describe the situation or background..."></textarea>
+
+        <label for="goal">Goal / Requirements <span class="req">*</span></label>
+        <textarea id="goal" placeholder="Describe what the AI must produce, constraints, style, etc."></textarea>
+
+        <div class="inline-buttons">
+            <button id="generateBtn" class="action">Generate Prompt</button>
+            <button id="clearBtn" class="secondary danger" title="Clear draft">Clear</button>
+        </div>
+
+        <label for="output">Generated Prompt</label>
+        <textarea id="output" readonly placeholder="Generated prompt will appear here..."></textarea>
+        <div class="status" id="status"></div>
+        <footer>
+            <small>Draft auto-saves. Switch providers without losing work.</small>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
