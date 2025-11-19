@@ -19,14 +19,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const keyToggleText = document.getElementById("keyToggleText");
     const toggleKeyVisibility = document.getElementById("toggleKeyVisibility");
     const copyKeyBtn = document.getElementById("copyKey");
+    const copyPromptBtn = document.getElementById("copyPromptBtn");
     const zoomInBtn = document.getElementById("zoomIn");
     const zoomOutBtn = document.getElementById("zoomOut");
     const zoomLevelEl = document.getElementById("zoomLevel");
     const container = document.querySelector(".container");
+    const manualModeBtn = document.getElementById("manualModeBtn");
+    const autoModeBtn = document.getElementById("autoModeBtn");
+    const manualSection = document.getElementById("manualSection");
+    const autoSection = document.getElementById("autoSection");
+    const autoDetailInput = document.getElementById("autoDetail");
+    const apiKeyHelpEl = document.getElementById("apiKeyHelp");
 
     let currentZoom = 1.0;
     const baseWidth = 420;
     const baseHeight = 600;
+    let currentMode = "manual"; // "manual" or "auto"
 
     const modelOptions = {
         gemini: [
@@ -94,6 +102,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function updateApiKeyHelp(provider) {
+        if (!apiKeyHelpEl) return;
+        if (provider === "gemini") {
+            apiKeyHelpEl.innerHTML = `<strong>Need a Gemini key?</strong><br>Get one at <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a>. Create a project → Generate API key.<br><em>Keep it secret; usage may incur costs.</em>`;
+        } else if (provider === "openai") {
+            apiKeyHelpEl.innerHTML = `<strong>Need an OpenAI key?</strong><br>Visit <a href="https://platform.openai.com/" target="_blank" rel="noopener noreferrer">platform.openai.com</a> → API Keys tab to create one.<br><em>Do not share; monitor token usage.</em>`;
+        } else if (provider === "anthropic") {
+            apiKeyHelpEl.innerHTML = `<strong>Need an Anthropic key?</strong><br>Go to <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> to generate a Claude API key.<br><em>Treat keys as credentials; costs vary by model.</em>`;
+        } else {
+            apiKeyHelpEl.innerHTML = `<strong>Need an API key?</strong><br>Select a provider above to see instructions.`;
+        }
+    }
+
     function loadForProvider(provider, store) {
         setApiKeyLabel(provider);
         populateModels(provider);
@@ -117,10 +138,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const provider = store.llmProvider || defaults.provider;
         providerSelect.value = provider;
         loadForProvider(provider, store);
+        updateApiKeyHelp(provider);
         // Restore draft fields
         titleInput.value = store.draft_title || "";
         scenarioInput.value = store.draft_scenario || "";
         goalInput.value = store.draft_goal || "";
+        autoDetailInput.value = store.draft_auto_detail || "";
         outputTextarea.value = store.draft_output || "";
         applyTheme(store.theme || "dark");
         updateProviderPill(provider);
@@ -130,6 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Restore zoom
         currentZoom = store.zoom || 1.0;
         applyZoom(currentZoom);
+        // Restore mode
+        currentMode = store.promptMode || "manual";
+        applyMode(currentMode);
     });
 
     providerSelect.addEventListener("change", () => {
@@ -137,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.sync.set({ llmProvider: provider });
         chrome.storage.sync.get(null, (store) => loadForProvider(provider, store));
         updateProviderPill(provider);
+        updateApiKeyHelp(provider);
     });
 
     apiKeyInput.addEventListener("change", () => {
@@ -159,9 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const provider = providerSelect.value;
         const apiKey = apiKeyInput.value.trim();
         const model = modelSelect.value.trim() || defaults[providerModelKey(provider)] || "";
-        const title = titleInput.value.trim();
-        const scenario = scenarioInput.value.trim();
-        const goal = goalInput.value.trim();
 
         outputTextarea.value = "";
         statusEl.textContent = "";
@@ -174,12 +198,26 @@ document.addEventListener("DOMContentLoaded", () => {
             statusEl.textContent = "Please enter a model name.";
             return;
         }
-        if (!title || !scenario || !goal) {
-            statusEl.textContent = "Please fill in Title, Scenario, and Goal.";
-            return;
-        }
 
-        const metaPrompt = buildPromptEngineerInstruction(title, scenario, goal);
+        let metaPrompt;
+        if (currentMode === "manual") {
+            const title = titleInput.value.trim();
+            const scenario = scenarioInput.value.trim();
+            const goal = goalInput.value.trim();
+
+            if (!title || !scenario || !goal) {
+                statusEl.textContent = "Please fill in Title, Scenario, and Goal.";
+                return;
+            }
+            metaPrompt = buildPromptEngineerInstruction(title, scenario, goal);
+        } else {
+            const autoDetail = autoDetailInput.value.trim();
+            if (!autoDetail) {
+                statusEl.textContent = "Please provide detailed description.";
+                return;
+            }
+            metaPrompt = buildAutoPromptInstruction(autoDetail);
+        }
 
         generateBtn.disabled = true;
         generateBtn.textContent = "Generating...";
@@ -203,9 +241,10 @@ document.addEventListener("DOMContentLoaded", () => {
         titleInput.value = "";
         scenarioInput.value = "";
         goalInput.value = "";
+        autoDetailInput.value = "";
         outputTextarea.value = "";
         statusEl.textContent = "Draft cleared.";
-        chrome.storage.sync.remove(["draft_title", "draft_scenario", "draft_goal", "draft_output"], () => {});
+        chrome.storage.sync.remove(["draft_title", "draft_scenario", "draft_goal", "draft_auto_detail", "draft_output"], () => {});
     });
 
     themeToggle.addEventListener("click", () => {
@@ -244,6 +283,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    copyPromptBtn.addEventListener("click", () => {
+        const text = outputTextarea.value.trim();
+        if (!text) {
+            statusEl.textContent = "No prompt to copy.";
+            return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            statusEl.textContent = "Prompt copied to clipboard.";
+        }).catch(err => {
+            console.error(err);
+            statusEl.textContent = "Copy failed.";
+        });
+    });
+
     zoomInBtn.addEventListener("click", () => {
         currentZoom = Math.min(currentZoom + 0.1, 1.5);
         applyZoom(currentZoom);
@@ -254,6 +307,18 @@ document.addEventListener("DOMContentLoaded", () => {
         currentZoom = Math.max(currentZoom - 0.1, 0.7);
         applyZoom(currentZoom);
         chrome.storage.sync.set({ zoom: currentZoom });
+    });
+
+    manualModeBtn.addEventListener("click", () => {
+        currentMode = "manual";
+        applyMode(currentMode);
+        chrome.storage.sync.set({ promptMode: currentMode });
+    });
+
+    autoModeBtn.addEventListener("click", () => {
+        currentMode = "auto";
+        applyMode(currentMode);
+        chrome.storage.sync.set({ promptMode: currentMode });
     });
 
     function updateProviderPill(provider) {
@@ -284,6 +349,20 @@ document.addEventListener("DOMContentLoaded", () => {
         zoomLevelEl.textContent = `${Math.round(zoom * 100)}%`;
     }
 
+    function applyMode(mode) {
+        if (mode === "auto") {
+            manualSection.classList.remove("active");
+            autoSection.classList.add("active");
+            manualModeBtn.classList.remove("active");
+            autoModeBtn.classList.add("active");
+        } else {
+            manualSection.classList.add("active");
+            autoSection.classList.remove("active");
+            manualModeBtn.classList.add("active");
+            autoModeBtn.classList.remove("active");
+        }
+    }
+
     // Draft autosave (debounced)
     let draftTimer = null;
     function queueDraftSave() {
@@ -295,11 +374,12 @@ document.addEventListener("DOMContentLoaded", () => {
             draft_title: titleInput.value,
             draft_scenario: scenarioInput.value,
             draft_goal: goalInput.value,
+            draft_auto_detail: autoDetailInput.value,
             draft_output: outputTextarea.value
         });
     }
 
-    [titleInput, scenarioInput, goalInput].forEach(el => {
+    [titleInput, scenarioInput, goalInput, autoDetailInput].forEach(el => {
         el.addEventListener("input", queueDraftSave);
         el.addEventListener("blur", saveDraft);
     });
@@ -338,6 +418,43 @@ The prompt should:
 - Emphasize that the AI must follow all constraints.
 
 Do NOT include examples of the final answer. Do NOT solve the task yourself.
+`.trim();
+}
+
+function buildAutoPromptInstruction(detailedDescription) {
+    return `
+INSTRUCTION: You are an expert PROMPT ENGINEER. Your task is to analyze the user's detailed description and create a high-quality, structured prompt for another AI model.
+
+USER'S DETAILED DESCRIPTION:
+${detailedDescription}
+
+YOUR TASK:
+1. Carefully analyze the description to identify:
+   - The main objective/task
+   - Target audience or context
+   - Specific requirements, constraints, or format needs
+   - Any style preferences or examples mentioned
+
+2. Create a clear, professional prompt that:
+   - Defines the AI's role (e.g., "You are an expert copywriter...")
+   - Clearly states the task with all relevant details
+   - Lists specific requirements, constraints, and format specifications
+   - Includes output format, length, style guidelines
+   - Emphasizes any must-follow constraints
+
+3. Structure the prompt with:
+   - Clear sections (Role, Task, Requirements, Format, Constraints)
+   - Bullet points or numbered lists for clarity
+   - Professional but direct language
+   - No ambiguity or vague instructions
+
+IMPORTANT:
+- Do NOT solve the task yourself
+- Do NOT include example outputs
+- ONLY write the prompt that will be given to another AI
+- Make it self-contained and ready to paste into any AI chat
+
+Generate the optimized prompt now:
 `.trim();
 }
 

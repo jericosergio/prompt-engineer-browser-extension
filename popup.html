@@ -192,6 +192,12 @@
         .key-controls button { flex: 1; }
         .icon-btn { background: var(--bg-alt); border: 1px solid var(--border); color: var(--text-dim); padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 11px; font-weight: 500; transition: background .15s, color .15s; }
         .icon-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .mode-toggle { display: flex; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px; gap: 4px; margin-bottom: 10px; }
+        .mode-toggle button { flex: 1; padding: 6px 12px; border: none; background: transparent; color: var(--text-dim); font-size: 12px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; }
+        .mode-toggle button.active { background: var(--accent); color: #fff; }
+        .mode-toggle button:hover:not(.active) { background: var(--bg-alt); color: var(--text); }
+        .mode-section { display: none; }
+        .mode-section.active { display: flex; flex-direction: column; gap: 10px; }
     </style>
 </head>
 
@@ -232,24 +238,45 @@
                     <button id="copyKey" class="icon-btn">📋 Copy</button>
                 </div>
                 <small style="display:block; margin-top:6px;">Saved locally. Never embed keys in published builds.</small>
+                <small id="apiKeyHelp" style="display:block; margin-top:4px;" aria-live="polite">
+                    <strong>Need an API key?</strong><br>
+                    Loading provider-specific instructions...
+                </small>
             </div>
         </div>
 
-        <label for="title">Title <span class="req">*</span></label>
-        <input id="title" type="text" placeholder="e.g. Marketing Slogan for a New Cafe">
+        <div class="mode-toggle">
+            <button id="manualModeBtn" class="active">📝 Manual Mode</button>
+            <button id="autoModeBtn">⚡ Auto Mode</button>
+        </div>
 
-        <label for="scenario">Scenario <span class="req">*</span></label>
-        <textarea id="scenario" placeholder="Describe the situation or background..."></textarea>
+        <div class="mode-section active" id="manualSection">
+            <label for="title">Title <span class="req">*</span></label>
+            <input id="title" type="text" placeholder="e.g. Marketing Slogan for a New Cafe">
 
-        <label for="goal">Goal / Requirements <span class="req">*</span></label>
-        <textarea id="goal" placeholder="Describe what the AI must produce, constraints, style, etc."></textarea>
+            <label for="scenario">Scenario <span class="req">*</span></label>
+            <textarea id="scenario" placeholder="Describe the situation or background..."></textarea>
+
+            <label for="goal">Goal / Requirements <span class="req">*</span></label>
+            <textarea id="goal" placeholder="Describe what the AI must produce, constraints, style, etc."></textarea>
+        </div>
+
+        <div class="mode-section" id="autoSection">
+            <label for="autoDetail">Detailed Description <span class="req">*</span></label>
+            <textarea id="autoDetail" style="min-height: 120px;" placeholder="Describe your task in detail. Include:&#10;• What you want to create/accomplish&#10;• Target audience or context&#10;• Specific requirements, constraints, or format&#10;• Any style preferences or examples&#10;&#10;Example: 'I need to write product descriptions for eco-friendly kitchenware for an e-commerce site. Target audience is environmentally conscious millennials. Descriptions should be 150-200 words, SEO-optimized, highlight sustainability benefits, and include a call-to-action.'"></textarea>
+            <small>💡 Tip: The more detail you provide, the better the generated prompt will be.</small>
+        </div>
 
         <div class="inline-buttons">
             <button id="generateBtn" class="action">Generate Prompt</button>
             <button id="clearBtn" class="secondary danger" title="Clear draft">Clear</button>
         </div>
+        <small style="margin-top:-6px; color: var(--text-dim);">API calls use your own key; excessive or misconfigured usage can generate charges. Monitor provider dashboards.</small>
 
-        <label for="output">Generated Prompt</label>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <label for="output" style="margin:0;">Generated Prompt</label>
+            <button id="copyPromptBtn" class="icon-btn" title="Copy generated prompt">📋 Copy Prompt</button>
+        </div>
         <textarea id="output" readonly placeholder="Generated prompt will appear here..."></textarea>
         <div class="status" id="status"></div>
         <footer>

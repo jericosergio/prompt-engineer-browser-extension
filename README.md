@@ -31,6 +31,10 @@
 - 🎨 **Modern UI** - Gradient header, responsive layout, clean design
 - 🗑️ **Clear button** - Quick reset for all draft fields
 - 🎯 **Meta-prompt generation** - Creates prompts for other AIs without solving tasks directly
+- 🔀 **Manual vs Auto Modes** - Manual (Title/Scenario/Goal inputs) or Auto (single detailed description transformed into structured prompt)
+- 📋 **Copy Prompt button** - One-click clipboard copy for generated prompt
+- 🧪 **Prompt engineering focus** - Generates reusable, instruction-rich prompts instead of direct answers
+- 🧷 **API key guidance** - Inline help on where to obtain provider keys
 
 ---
 
@@ -46,6 +50,20 @@
 3. **Reuse** - Copy the generated prompt and paste it into any AI chat interface
 
 The extension acts as a **prompt engineer**, creating instructions for another AI rather than solving the task itself.
+
+---
+
+## 🧭 Modes
+
+You can switch between two modes of prompt construction:
+
+### 1. Manual Mode
+Provides three structured inputs (Title, Scenario, Goal/Requirements). Best when you want tight control over each component.
+
+### 2. Auto Mode
+Supply a single **Detailed Task Description** and the extension automatically expands it into a well-structured, multi-part prompt (role, task breakdown, constraints, output formatting). Ideal for rapid iteration or when you have a raw idea.
+
+Switching modes preserves your drafts separately so you can move back and forth without losing work.
 
 ---
 
@@ -87,6 +105,16 @@ The extension acts as a **prompt engineer**, creating instructions for another A
 7. **Clear** - Reset all fields when starting fresh
 8. **Adjust UI** - Use +/− zoom controls (70%-150%)
 9. **Toggle Theme** - Click 🌙/☀️ icon
+10. **Switch Modes** - Use mode toggle if present (Manual vs Auto)
+11. **Copy Prompt** - Use the dedicated "📋 Copy Prompt" button for one-click copying
+
+### Auto Mode Workflow
+1. Enable **Auto Mode**
+2. Enter a comprehensive task description (include audience, desired format, constraints)
+3. Click **Generate Prompt**
+4. Review the structured prompt (role, steps, constraints, formatting)
+5. Refine your description and regenerate as needed
+6. Copy prompt and use in any LLM interface
 
 ---
 
@@ -198,6 +226,8 @@ prompt-engineer-extension/
 | `apiKey_[provider]` | Provider-specific API keys |
 | `model_[provider]` | Last selected model per provider |
 | `draft_title`, `draft_scenario`, `draft_goal`, `draft_output` | Auto-saved fields |
+| `promptMode` | Current mode (`manual` or `auto`) |
+| `draft_autoDetail` | Auto Mode detailed description draft |
 | `theme` | UI theme (`dark` or `light`) |
 | `zoom` | UI zoom level (0.7 to 1.5) |
 
@@ -428,7 +458,21 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## ⚠️ Disclaimer
 
-**Use at your own risk.** API usage may incur costs depending on the provider. Monitor usage and follow each provider's terms of service.
+**Use at your own risk.** API usage may incur costs depending on the provider. Monitor usage, set spending limits where available, and follow each provider's terms of service.
+
+### Obtaining API Keys
+- **Gemini (Google AI Studio)**: https://aistudio.google.com/ – Create a project and generate an API key.
+- **OpenAI**: https://platform.openai.com/ – Create an account, go to API Keys section.
+- **Anthropic**: https://console.anthropic.com/ – Request access (if required) and generate a key.
+
+### Best Practices
+- Never hardcode keys in public repositories.
+- Rotate keys periodically and revoke unused ones.
+- Restrict keys (if provider supports) by IP, referrer, or usage caps.
+- Review usage dashboards regularly to avoid unexpected charges.
+
+### Cost Awareness
+Different models have different pricing tiers (input vs output tokens). Favor lighter/faster models for exploratory prompting; switch to larger ones only when necessary.
 
 ---
 
