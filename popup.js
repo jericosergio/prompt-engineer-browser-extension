@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const webObjectiveInput = document.getElementById("webObjective");
     const webExtractTextarea = document.getElementById("webExtract");
     const selectOnPageBtn = document.getElementById("selectOnPageBtn");
+    const finishSelectionBtn = document.getElementById("finishSelectionBtn");
     const includeHiddenCheckbox = document.getElementById("includeHidden");
     const cssSelectorInput = document.getElementById("cssSelectorInput");
     const addBySelectorBtn = document.getElementById("addBySelectorBtn");
@@ -447,6 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectOnPageBtn) {
         selectOnPageBtn.addEventListener("click", async () => {
             statusEl.textContent = "Selection mode enabled on page...";
+            if (finishSelectionBtn) finishSelectionBtn.style.display = "inline-flex";
             try {
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                 if (!tab?.id) {
@@ -510,7 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         function sendUpdate() {
                             const payload = collectTexts();
                             if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-                                chrome.runtime.sendMessage({ type: "PE_WEB_SELECTION_UPDATE", payload });
+                                chrome.runtime.sendMessage({ type: "PE_WEB_SELECTION_UPDATE", payload }).catch(() => {});
                             }
                         }
 
@@ -551,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             const payload = collectTexts();
                             cleanup();
                             if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-                                chrome.runtime.sendMessage({ type: "PE_WEB_SELECTION_DONE", payload });
+                                chrome.runtime.sendMessage({ type: "PE_WEB_SELECTION_DONE", payload }).catch(() => {});
                             }
                         }
                         function onKeyDown(e){
@@ -559,7 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 e.preventDefault();
                                 cleanup();
                                 if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-                                    chrome.runtime.sendMessage({ type: "PE_WEB_SELECTION_CANCEL" });
+                                    chrome.runtime.sendMessage({ type: "PE_WEB_SELECTION_CANCEL" }).catch(() => {});
                                 }
                             }
                             if (e.key === "Enter") { e.preventDefault(); finish(); }
@@ -596,12 +598,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 (lastSelectionPayload?.textsContent || []).length
             );
             saveDraft();
+            if (finishSelectionBtn) finishSelectionBtn.style.display = "none";
             statusEl.textContent = count ? `Captured ${count} selection(s).` : "No text captured.";
         }
         if (msg?.type === "PE_WEB_SELECTION_CANCEL") {
+            if (finishSelectionBtn) finishSelectionBtn.style.display = "none";
             statusEl.textContent = "Selection canceled.";
         }
     });
+
+    // Manual finish selection button
+    if (finishSelectionBtn) {
+        finishSelectionBtn.addEventListener("click", async () => {
+            try {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!tab?.id) { statusEl.textContent = "No active tab found."; return; }
+                // Send Enter key to trigger finish in the content script
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    world: "ISOLATED",
+                    func: () => {
+                        const evt = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+                        window.dispatchEvent(evt);
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+                statusEl.textContent = "Finish failed.";
+            }
+        });
+    }
 
     // Add elements by CSS selector (captures textContent, including hidden)
     if (addBySelectorBtn) {

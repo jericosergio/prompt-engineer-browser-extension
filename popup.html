@@ -274,9 +274,12 @@
 
             <div class="row" style="align-items:center; justify-content:space-between;">
                 <label style="margin:0;">Select elements from current page</label>
-                <button id="selectOnPageBtn" class="icon-btn" title="Pick elements on the page">🖱️ Select on Page</button>
+                <div style="display:flex; gap:6px;">
+                    <button id="selectOnPageBtn" class="icon-btn" title="Pick elements on the page">🖱️ Select on Page</button>
+                    <button id="finishSelectionBtn" class="icon-btn" title="Finish selection and extract" style="display:none;">✅ Finish Selection</button>
+                </div>
             </div>
-            <small>When active: hover to highlight, click to select/deselect. Press Enter to finish, or Esc to cancel.</small>
+            <small>When active: hover to highlight, click to select/deselect. Click "Finish Selection" or press Enter to extract.</small>
 
             <div class="row" style="align-items:center; gap:8px; margin-top:6px;">
                 <label style="margin:0; display:flex; align-items:center; gap:6px;">
