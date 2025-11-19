@@ -2,7 +2,7 @@
 
 > A browser extension for generating high-quality, structured prompts across multiple LLM providers (Gemini, OpenAI, Anthropic).
 
-![Extension Showcase](./assets/image/extension_showcase.png)
+![Extension Showcase](./assets/image/image.png)
 
 ## 📋 Table of Contents
 - [Features](#features)
