@@ -2,13 +2,16 @@
     "manifest_version": 3,
     "name": "Prompt Engineer Helper",
     "description": "Generate high-quality LLM prompts from task descriptions using popular LLM APIs (Gemini, Claude, ChatGPT).",
-    "version": "1.5",
+    "version": "1.6",
     "action": {
         "default_popup": "popup.html",
         "default_title": "Prompt Engineer Helper"
     },
     "permissions": [
-        "storage"
+        "storage",
+        "tabs",
+        "activeTab",
+        "scripting"
     ],
     "host_permissions": [
         "https://generativelanguage.googleapis.com/*",

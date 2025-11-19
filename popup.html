@@ -248,6 +248,7 @@
         <div class="mode-toggle">
             <button id="manualModeBtn" class="active">📝 Manual Mode</button>
             <button id="autoModeBtn">⚡ Auto Mode</button>
+            <button id="webModeBtn">🌐 Auto (Web)</button>
         </div>
 
         <div class="mode-section active" id="manualSection">
@@ -265,6 +266,31 @@
             <label for="autoDetail">Detailed Description <span class="req">*</span></label>
             <textarea id="autoDetail" style="min-height: 120px;" placeholder="Describe your task in detail. Include:&#10;• What you want to create/accomplish&#10;• Target audience or context&#10;• Specific requirements, constraints, or format&#10;• Any style preferences or examples&#10;&#10;Example: 'I need to write product descriptions for eco-friendly kitchenware for an e-commerce site. Target audience is environmentally conscious millennials. Descriptions should be 150-200 words, SEO-optimized, highlight sustainability benefits, and include a call-to-action.'"></textarea>
             <small>💡 Tip: The more detail you provide, the better the generated prompt will be.</small>
+        </div>
+
+        <div class="mode-section" id="webSection">
+            <label for="webObjective">Objective (optional)</label>
+            <input id="webObjective" type="text" placeholder="e.g. Summarize product features and target audience">
+
+            <div class="row" style="align-items:center; justify-content:space-between;">
+                <label style="margin:0;">Select elements from current page</label>
+                <button id="selectOnPageBtn" class="icon-btn" title="Pick elements on the page">🖱️ Select on Page</button>
+            </div>
+            <small>When active: hover to highlight, click to select/deselect. Press Enter to finish, or Esc to cancel.</small>
+
+            <div class="row" style="align-items:center; gap:8px; margin-top:6px;">
+                <label style="margin:0; display:flex; align-items:center; gap:6px;">
+                    <input id="includeHidden" type="checkbox" style="width:auto;"> Include hidden text (display:none)
+                </label>
+            </div>
+
+            <div class="row" style="align-items:center; gap:8px;">
+                <input id="cssSelectorInput" type="text" placeholder="CSS selector (e.g., .details[hidden], #panel)" />
+                <button id="addBySelectorBtn" class="icon-btn" title="Add elements by selector">➕ Add by Selector</button>
+            </div>
+
+            <label for="webExtract" style="margin-top:6px;">Extracted Content Preview (editable)</label>
+            <textarea id="webExtract" style="min-height: 120px;" placeholder="Selected content will appear here..."></textarea>
         </div>
 
         <div class="inline-buttons">

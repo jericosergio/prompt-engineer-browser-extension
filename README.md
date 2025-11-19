@@ -35,6 +35,11 @@
 - 📋 **Copy Prompt button** - One-click clipboard copy for generated prompt
 - 🧪 **Prompt engineering focus** - Generates reusable, instruction-rich prompts instead of direct answers
 - 🧷 **API key guidance** - Inline help on where to obtain provider keys
+- 🌐 **Auto (Web) Mode** - Select elements on the current page to auto-build a prompt from on-page content
+   - 🖱️ Click-to-select/deselect elements with live preview
+   - 👁️ Include hidden text (display:none) toggle
+   - ➕ Add elements by CSS selector
+   - ✍️ Editable extracted content preview with autosave
 
 ---
 
@@ -55,7 +60,7 @@ The extension acts as a **prompt engineer**, creating instructions for another A
 
 ## 🧭 Modes
 
-You can switch between two modes of prompt construction:
+You can switch between three modes of prompt construction:
 
 ### 1. Manual Mode
 Provides three structured inputs (Title, Scenario, Goal/Requirements). Best when you want tight control over each component.
@@ -64,6 +69,14 @@ Provides three structured inputs (Title, Scenario, Goal/Requirements). Best when
 Supply a single **Detailed Task Description** and the extension automatically expands it into a well-structured, multi-part prompt (role, task breakdown, constraints, output formatting). Ideal for rapid iteration or when you have a raw idea.
 
 Switching modes preserves your drafts separately so you can move back and forth without losing work.
+
+### 3. Auto (Web)
+Capture content directly from the page you’re viewing and transform it into a tailored prompt.
+- Select elements by clicking on the page (hover highlight, click to select/deselect)
+- Press Enter to finish, Esc to cancel
+- Toggle “Include hidden text” to capture content from hidden elements (uses `textContent`)
+- Add elements via custom CSS selector
+- Edit the extracted content preview before generating the final prompt
 
 ---
 
@@ -105,7 +118,7 @@ Switching modes preserves your drafts separately so you can move back and forth 
 7. **Clear** - Reset all fields when starting fresh
 8. **Adjust UI** - Use +/− zoom controls (70%-150%)
 9. **Toggle Theme** - Click 🌙/☀️ icon
-10. **Switch Modes** - Use mode toggle if present (Manual vs Auto)
+10. **Switch Modes** - Use mode toggle (Manual, Auto, Auto (Web))
 11. **Copy Prompt** - Use the dedicated "📋 Copy Prompt" button for one-click copying
 
 ### Auto Mode Workflow
@@ -115,6 +128,18 @@ Switching modes preserves your drafts separately so you can move back and forth 
 4. Review the structured prompt (role, steps, constraints, formatting)
 5. Refine your description and regenerate as needed
 6. Copy prompt and use in any LLM interface
+
+### Auto (Web) Workflow
+1. Switch to **Auto (Web)**
+2. Optionally add an Objective to guide the prompt
+3. Click **🖱️ Select on Page**
+   - Hover to highlight, click to select/deselect
+   - Press Enter to finish, Esc to cancel
+4. Optionally enable **Include hidden text** to capture `display:none` content
+5. Optionally **Add by Selector** (e.g., `.details[hidden], #panel`)
+6. Review and edit the **Extracted Content Preview**
+7. Click **Generate Prompt**
+8. Copy the final prompt and use it anywhere
 
 ---
 
@@ -208,6 +233,7 @@ Status: Done. You can copy the prompt above.
 - **No dependencies** - Pure HTML/CSS/JS
 - **Direct API calls** - Fetch requests to provider endpoints
 - **Chrome Storage API** - `storage.sync` for cross-device persistence
+ - **Permissions** - Uses `tabs`, `activeTab`, and `scripting` to enable on-page selection in Auto (Web)
 
 ### File Structure
 ```
@@ -226,8 +252,11 @@ prompt-engineer-extension/
 | `apiKey_[provider]` | Provider-specific API keys |
 | `model_[provider]` | Last selected model per provider |
 | `draft_title`, `draft_scenario`, `draft_goal`, `draft_output` | Auto-saved fields |
-| `promptMode` | Current mode (`manual` or `auto`) |
+| `promptMode` | Current mode (`manual`, `auto`, or `web`) |
 | `draft_autoDetail` | Auto Mode detailed description draft |
+| `draft_web_objective` | Auto (Web) objective draft |
+| `draft_web_extract` | Auto (Web) extracted content preview |
+| `web_include_hidden` | Whether to include hidden text (`textContent`) in preview |
 | `theme` | UI theme (`dark` or `light`) |
 | `zoom` | UI zoom level (0.7 to 1.5) |
 
